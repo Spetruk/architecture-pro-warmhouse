@@ -1,0 +1,156 @@
+openapi: 3.0.0
+info:
+  title: Telemetry Service API
+  description: API for fetching telemetry data from smart home sensors
+  version: 1.0.0
+  contact:
+    email: support@smarthome.com
+
+servers:
+  - url: http://localhost:8082
+    description: Development server
+
+tags:
+  - name: telemetry
+    description: Telemetry data endpoints
+  - name: health
+    description: Health check endpoints
+
+paths:
+  /telemetry:
+    get:
+      tags:
+        - telemetry
+      summary: Get telemetry by location and type
+      description: Fetches telemetry data for a specific location and type
+      operationId: getTelemetryByLocationAndType
+      parameters:
+        - name: type
+          in: query
+          description: Telemetry type (e.g. temperature, humidity, light, motion)
+          required: true
+          schema:
+            type: string
+            enum: [temperature, humidity, light, motion, air_quality, pressure]
+        - name: location
+          in: query
+          description: Location name (e.g. Living Room, Bedroom, Kitchen)
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Telemetry data for the location and type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TelemetryResponse'
+        '400':
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Telemetry data not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /telemetry/{sensorId}:
+    get:
+      tags:
+        - telemetry
+      summary: Get telemetry by sensor ID
+      description: Fetches telemetry data for a specific sensor ID
+      operationId: getTelemetryBySensorId
+      parameters:
+        - name: sensorId
+          in: path
+          description: Sensor identifier
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Telemetry data for the sensor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TelemetryResponse'
+        '400':
+          description: Invalid sensor ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Sensor not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    TelemetryResponse:
+      type: object
+      properties:
+        value:
+          type: number
+          format: float
+          description: Telemetry value
+          example: 22.5
+        unit:
+          type: string
+          description: Unit of measurement
+          example: "°C"
+        timestamp:
+          type: string
+          format: date-time
+          description: Time when the measurement was taken
+        location:
+          type: string
+          description: Physical location of the sensor
+          example: "Living Room"
+        status:
+          type: string
+          description: Sensor status
+          example: "OK"
+        sensor_id:
+          type: string
+          description: Unique identifier of the sensor
+          example: "1"
+        sensor_type:
+          type: string
+          description: Type of the sensor
+          example: "temperature"
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+          example: "Sensor not found"
+        code:
+          type: integer
+          description: Error code
+          example: 404
+        timestamp:
+          type: string
+          format: date-time
+          description: Time when the error occurred

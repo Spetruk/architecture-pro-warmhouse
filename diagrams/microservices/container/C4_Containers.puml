@@ -1,0 +1,43 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title "Smart Home SaaS - Container Diagram"
+
+Person(user, "User", "Person who owns sensors at home")
+
+System_Boundary(smart_home_saas, "Smart Home SaaS") {
+    Container(web_app, "Web Application", "React, Next.js", "Provides user interface for managing smart homes")
+
+    Container(user_service, "User Service", "Go", "Manages user profiles and authentication")
+    Container(home_service, "Home Service", "Go", "Manages homes and their structures")
+    Container(sensor_service, "Sensor Service", "Go", "Manages sensors")
+    Container(telemetry_service, "Telemetry Service", "Node.js", "The telemetry monitoring system")
+
+    ContainerDb(user_db, "User Database", "PostgreSQL", "Stores user account information")
+    ContainerDb(telemetry_db, "Telemetry Database", "PostgreSQL", "Stores telemetry")
+    ContainerDb(home_db, "Home Database", "PostgreSQL", "Stores home and room information")
+    ContainerDb(sensor_db, "Sensor Database", "PostgreSQL", "Stores sensor information")
+    Container(message_broker, "Message Broker", "Kafka", "Handles asynchronous communication between services")
+}
+
+Container_Ext(iot_gateway, "IOT Gateway", "")
+Container_Ext(external_devices, "Physical devices", "")
+
+Rel(user, web_app, "Uses", JSON/HTTPS")
+
+Rel(web_app, user_service, "Manages users via", "JSON/HTTPS")
+Rel(web_app, home_service, "Manages homes via", "JSON/HTTPS")
+Rel(web_app, sensor_service, "Manages devices via", "JSON/HTTPS")
+Rel(sensor_service, telemetry_service, "Manages devices via", "JSON/HTTPS")
+
+Rel(external_devices, iot_gateway, "Emit events from devices", "")
+Rel(iot_gateway, message_broker, "Publishes telemetry events to", "Kafka Protocol")
+
+Rel(user_service, user_db, "Reads from and writes to", "SQL/TCP")
+Rel(home_service, home_db, "Reads from and writes to", "SQL/TCP")
+Rel(telemetry_service, telemetry_db, "Reads from and writes to", "SQL/TCP")
+Rel(sensor_service, sensor_db, "Reads from and writes to", "SQL/TCP")
+
+Rel(message_broker , telemetry_service, "Consumes telemetry events from", "Kafka Protocol")
+
+@enduml

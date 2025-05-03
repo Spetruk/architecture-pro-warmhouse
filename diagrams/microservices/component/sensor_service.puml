@@ -1,0 +1,27 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Component Diagram for Sensor Service
+
+Container(web_app, "Web Application", "React, Next.js", "Provides user interface for managing smart homes")
+
+Component(telemetry_service, "Telemetry Service", "Node.js", "The telemetry monitoring system")
+
+Container_Boundary(sensor_service, "Sensor Service") {
+  Component(sensor_controller, "Sensor Controller", "Flask", "Handles sensor-related HTTP requests")
+  Component(telemetry_client, "Telemetry Service Client", "Flask", "Makes HTTP requests to Telemetry Service")
+  Component(sensor_repository, "Sensor Repository", "Python", "Data access layer for sensors")
+}
+
+ContainerDb(sensor_db, "Sensor Database", "PostgreSQL", "Stores sensor information")
+
+Rel(web_app, sensor_controller, "Manages sensors via", "JSON/HTTPS")
+
+Rel(sensor_controller, sensor_repository, "Uses")
+Rel(sensor_controller, telemetry_client, "Uses")
+Rel(telemetry_client, telemetry_service, "Get telemetry data", "JSON/HTTPS")
+Rel(sensor_repository, sensor_db, "Reads from and writes to", "SQL/TCP")
+
+
+
+@enduml

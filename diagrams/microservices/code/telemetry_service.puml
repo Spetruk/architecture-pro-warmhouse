@@ -1,0 +1,89 @@
+@startuml
+package "telemetry_service" {
+  package "models" {
+    class Telemetry {
+      + id: int
+      + sensor_id: int
+      + type: str
+      + unit: str
+      + location: str
+      + value: float
+      + status: str
+      + timestamp: datetime
+    }
+
+    class ApiResponse {
+      + status_code: int
+      + data: any
+      + message: str
+    }
+
+    class TelemetryEvent {
+      + sensor_id: int
+      + sensor_type: str
+      + value: float
+      + unit: str
+      + location: str
+      + status: str
+      + timestamp: datetime
+    }
+  }
+
+  package "api controllers" {
+    class TelemetryController {
+      - telemetry_repository: TelemetryRepository
+
+      + get_telemetry(sensor_id: int): ApiResponse<Telemetry>
+      + get_telemetry_by_location(location_id: int,  type: string): ApiResponse<Telemetry>
+    }
+  }
+
+  package "repository" {
+    class TelemetryRepository {
+      + add(telemetry: Telemetry) :Bool
+      + get_telemetry_by_sensor(sensor_id: int): List<Telemetry>
+      + get_telemetry_by_location(location_id: int, type: string): ApiResponse<List<Telemetry>>
+    }
+  }
+
+  package "kafka" {
+    class TelemetryConsumer {
+      - kafka_client: KafkaConsumer
+      - telemetry_repository: TelemetryRepository
+
+      + consume_events(topic: str): None
+      + process_message(message: bytes): None
+      + parse_telemetry_event(message: dict): TelemetryEvent
+      + convert_to_telemetry(event: TelemetryEvent): Telemetry
+    }
+  }
+}
+
+' External service
+package "sensor_service" <<Cloud>> {
+  class SensorServiceClient {
+    + get_sensor_by_id(sensor_id: int): Sensor
+  }
+}
+
+package "kafka" <<Cloud>> {
+  class MessageBroker {
+    + publish(topic: str, message: bytes): None
+    + subscribe(topic: str, consumer_group: str): None
+  }
+}
+
+' Relationships
+SensorServiceClient --> TelemetryController : get telemetry
+TelemetryController --> TelemetryRepository : uses
+TelemetryController ..> ApiResponse : returns
+TelemetryController ..> Telemetry : returns in response
+
+TelemetryConsumer --> TelemetryRepository : uses
+TelemetryConsumer --> MessageBroker : subscribes to topics
+TelemetryConsumer ..> TelemetryEvent : processes
+TelemetryConsumer ..> Telemetry : converts event to
+
+TelemetryRepository ..> Telemetry : manages
+
+@enduml

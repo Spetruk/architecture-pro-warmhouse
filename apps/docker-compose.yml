@@ -4,10 +4,69 @@ services:
   postgres:
     image: postgres:16-alpine
     container_name: smarthome-postgres
-  ## тут нужно добавить настройки
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: smarthome
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+      - ./init:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    networks:
+      - smarthome-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d smarthome" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  telemetry_service:
+    build:
+      context: ./telemetry_service
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8082"
+    environment:
+      - TEMPERATURE_API_URL=http://temperature-api:8081
+    depends_on:
+      - temperature-api
+    restart: unless-stopped
+    networks:
+      - smarthome-network
+
+  sensor-service:
+    build:
+      context: ./sensor_service
+      dockerfile: Dockerfile
+    container_name: sensor-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      telemetry_service:
+        condition: service_started
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/smarthome
+      - TELEMETRY_SERVICE_URL=http://telemetry_service:8082
+      - PORT=8083
+    ports:
+      - "8083:8083"
+    restart: unless-stopped
+    networks:
+      - smarthome-network
 
   temperature-api:
-  ## тут нужно добавить приложение
+    build:
+      context: ./temperature-api
+      dockerfile: Dockerfile
+    container_name: temperature-api
+    ports:
+      - "8081:8081"
+    restart: unless-stopped
+    networks:
+      - smarthome-network
 
   app:
     build:
@@ -17,19 +76,15 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      temperature-api:
+      sensor-service:
         condition: service_started
     environment:
-      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/smarthome
-      - TEMPERATURE_API_URL=http://temperature-api:8081
+      - SENSOR_SERVICE_URL=http://sensor-service:8083
     ports:
       - "8080:8080"
     restart: unless-stopped
     networks:
       - smarthome-network
-
-volumes:
-  postgres_data:
 
 networks:
   smarthome-network:

@@ -1,0 +1,66 @@
+erDiagram
+%% User Database
+    USER {
+        int id PK
+        string username
+        string password_hash
+        string phone_number
+        string email
+        datetime created_at
+        datetime updated_at
+        boolean is_active
+    }
+
+%% Home Database
+    HOME {
+        int id PK
+        int owner_id FK
+        string name
+        string address
+        string type
+        int square_meters
+        datetime created_at
+        datetime updated_at
+    }
+
+    LOCATION {
+        int id PK
+        int home_id FK
+        string name
+        string type
+        int floor
+        int square_meters
+        datetime created_at
+        datetime updated_at
+    }
+
+%% Device Database
+    SENSOR {
+        int id PK
+        int location FK
+        string name
+        string type
+        string unit
+        string status
+        float value
+        datetime last_updated
+        datetime created_at
+        datetime updated_at
+    }
+
+%% Telemetry Database
+    TELEMETRY {
+        int id PK
+        int sensor_id FK
+        int location FK
+        float value
+        string unit
+        string status
+        datetime timestamp
+    }
+
+%% Relationships
+    USER ||--o{ HOME : "owns"
+    HOME ||--o{ LOCATION : "contains"
+    LOCATION ||--o{ SENSOR : "has installed"
+    SENSOR ||--o{ TELEMETRY : "generates"

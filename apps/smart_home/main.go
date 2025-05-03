@@ -9,7 +9,6 @@ import (
 	"syscall"
 	"time"
 
-	"smarthome/db"
 	"smarthome/handlers"
 	"smarthome/services"
 
@@ -17,23 +16,20 @@ import (
 )
 
 func main() {
-	// Set up database connection
-	dbURL := getEnv("DATABASE_URL", "postgres://postgres:postgres@localhost:5432/smarthome")
-	database, err := db.New(dbURL)
-	if err != nil {
-		log.Fatalf("Unable to connect to database: %v\n", err)
-	}
-	defer database.Close()
-
-	log.Println("Connected to database successfully")
-
-	// Initialize temperature service
-	temperatureAPIURL := getEnv("TEMPERATURE_API_URL", "http://temperature-api:8081")
-	temperatureService := services.NewTemperatureService(temperatureAPIURL)
-	log.Printf("Temperature service initialized with API URL: %s\n", temperatureAPIURL)
 
 	// Initialize router
 	router := gin.Default()
+
+	sensorServiceURL := os.Getenv("SENSOR_SERVICE_URL")
+	if sensorServiceURL == "" {
+		sensorServiceURL = "http://sensor-service:8083" // Значение по умолчанию
+	}
+
+	// Создаем сервис датчиков
+	sensorService := services.NewSensorService(sensorServiceURL)
+
+	// Инициализируем обработчик с сервисом датчиков
+	sensorHandler := handlers.NewSensorHandler(sensorService)
 
 	// Health check endpoint
 	router.GET("/health", func(c *gin.Context) {
@@ -44,9 +40,6 @@ func main() {
 
 	// API routes
 	apiRoutes := router.Group("/api/v1")
-
-	// Register sensor routes
-	sensorHandler := handlers.NewSensorHandler(database, temperatureService)
 	sensorHandler.RegisterRoutes(apiRoutes)
 
 	// Start server
