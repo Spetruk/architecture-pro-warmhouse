@@ -1,0 +1,14 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+title System Context diagram for Smart Home
+
+Person(customer, "Smart Home Customer", "Person who owns sensors at home")
+System(smart_home_service, "Smart Home System", "Allows customers to view information about their sensors temperature, and add, delete, edit sensors.")
+
+System_Ext(temperature_service, "External Temperature API System", "Emit sensors temperature data")
+
+Rel(customer, smart_home_service, "Uses")
+Rel(smart_home_service, temperature_service, "Uses")
+
+@enduml

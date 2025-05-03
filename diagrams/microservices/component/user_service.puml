@@ -1,0 +1,26 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Component Diagram for User Service
+
+
+Container(web_app, "Web Application", "React, Next.js", "Provides user interface for managing smart homes")
+
+Container_Boundary(user_service_container, "User Service") {
+    Component(user_controller, "User Controller", "Go", "Handles user-related requests")
+    Component(auth_service, "Authentication Service", "Go", "Handles authentication logic")
+    Component(profile_manager, "Profile Manager", "Go", "Manages user profile information")
+    Component(user_repository, "User Repository", "Go", "Data access layer for users")
+}
+
+ContainerDb(user_db, "User Database", "PostgreSQL", "Stores user account information")
+
+Rel(web_app, user_controller, "Forwards user requests", "JSON/HTTPS")
+
+Rel(user_controller, auth_service, "Uses")
+Rel(user_controller, profile_manager, "Uses")
+Rel(auth_service, user_repository, "Uses")
+Rel(profile_manager, user_repository, "Uses")
+Rel(user_repository, user_db, "Reads from and writes to", "SQL/TCP")
+
+@enduml

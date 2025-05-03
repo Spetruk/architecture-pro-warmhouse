@@ -1,0 +1,99 @@
+@startuml
+package "sensor_service" {
+  package "models" {
+    class Telemetry {
+      + id: int
+      + sensor_id: int
+      + type: str
+      + unit: str
+      + location: str
+      + value: float
+      + status: str
+      + timestamp: datetime
+    }
+
+    class ApiResponse {
+      + status_code: int
+      + data: any
+      + message: str
+    }
+
+    class Sensor {
+      + id: int
+      + name: str
+      + type: str
+      + location: str
+      + value: float
+      + unit: str
+      + status: str
+      + last_updated: datetime
+      + created_at: datetime
+    }
+
+    class SensorCreate {
+      + name: str
+      + type: str
+      + location: str
+      + unit: str
+    }
+
+    class SensorUpdate {
+      + name: str
+      + type: str
+      + location: str
+      + unit: str
+      + status: str
+    }
+  }
+
+  package "api controllers" {
+    class SensorController {
+      - sensor_repository: SensorRepository
+      - telemetry_service_client: TelemetryServiceClient
+
+      + get_sensors(): ApiResponse<List<Sensor>>
+      + get_sensor_by_id(id: int): ApiResponse<Sensor>
+      + create_sensor(sensor_data: SensorCreate): ApiResponse<Sensor>
+      + update_sensor(id: int, sensor_data: SensorUpdate): ApiResponse<Sensor>
+      + delete_sensor(id: int): ApiResponse<None>
+
+      + get_telemetry_by_sensor(sensor_id: int): ApiResponse<List<Telemetry>>
+      + get_telemetry_by_location(location_id: int): ApiResponse<List<Telemetry>>
+    }
+  }
+
+  package "repository" {
+    class SensorRepository {
+      + get_sensors(): List<Sensor>
+      + get_sensor_by_id(id: int): Sensor
+      + create_sensor(sensor: SensorCreate): Sensor
+      + delete_sensor(id: int): bool
+      + update_sensor(id: int, sensor_data: SensorUpdate): Sensor
+      + get_sensors_by_location(location: str): List<Sensor>
+    }
+  }
+
+  package "client" {
+    class TelemetryServiceClient {
+      - base_url: str
+      + get_telemetry_by_sensor(sensor_id: int): List<Telemetry>
+      + get_telemetry_by_location(location_id: int): ApiResponse<List<Telemetry>>
+    }
+  }
+}
+
+' External service
+package "telemetry_service" <<Cloud>> {
+  class TelemetryService {
+    + get_telemetry_by_sensor(sensor_id: int): List<Telemetry>
+    + get_telemetry_by_location(location_id: int): ApiResponse<List<Telemetry>>
+  }
+}
+
+' Relationships
+SensorController --> SensorRepository : uses
+SensorController --> TelemetryServiceClient : uses
+TelemetryServiceClient --> TelemetryService : makes HTTP requests to
+
+
+@enduml

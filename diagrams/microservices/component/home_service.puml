@@ -1,0 +1,22 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Component Diagram for Home Service
+
+Container(web_app, "Web Application", "React, Next.js", "Provides user interface for managing smart homes")
+
+
+Container_Boundary(home_service_container, "Home Service") {
+    Component(home_controller, "Home Controller", "Node.js", "Handles home-related requests")
+    Component(home_repository, "Home Repository", "Node.js", "Data access layer for homes")
+}
+
+ContainerDb(home_db, "Home Database", "PostgreSQL", "Stores home information")
+
+
+Rel(web_app, home_controller, "Forwards user requests", "JSON/HTTPS")
+
+Rel(home_controller, home_repository, "Uses")
+Rel(home_repository, home_db, "Reads from and writes to", "SQL/TCP")
+
+@enduml

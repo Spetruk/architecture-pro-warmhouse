@@ -1,0 +1,28 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Component Diagram for Telemetry Service
+
+Container(device_service, "Device Service", "Go", "Manages sensors")
+System_Ext(message_broker, "Message Broker", "Kafka", "Handles asynchronous communication between services")
+
+
+Container_Boundary(telemetry_service, "Telemetry Service") {
+    Component(telemetry_controller, "Telemetry Controller", "Node.js", "Receives data from external sensors")
+    Component(sensor_telemetry_consumer, "Telemetry Consumer", "Python", "Consumes telemetry events from Kafka")
+    Component(telemetry_repository, "Telemetry Repository", "Python", "Data access layer for telemetry")
+}
+
+ContainerDb(telemetry_db, "Telemetry Database", "PostgreSQL", "Stores telemetry information")
+
+
+
+Container(message_broker, "Message Broker", "Kafka", "Handles asynchronous communication between services")
+
+Rel(telemetry_repository, telemetry_db, "Reads from and writes to", "SQL/TCP")
+Rel(device_service, telemetry_controller, "Sends processed data to")
+Rel(sensor_telemetry_consumer, telemetry_repository, "Sends data to")
+Rel(telemetry_controller, telemetry_repository, "Get data from")
+Rel(message_broker, sensor_telemetry_consumer, "Publishes telemetry events to", "Kafka Protocol")
+
+@enduml

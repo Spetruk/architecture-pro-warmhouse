@@ -1,0 +1,392 @@
+openapi: 3.0.0
+info:
+  title: Sensor Service API
+  description: API for managing smart home sensors and their data
+  version: 1.0.0
+  contact:
+    email: support@smarthome.com
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Development server
+
+tags:
+  - name: sensors
+    description: Sensor management endpoints
+  - name: temperature
+    description: Temperature data endpoints
+
+paths:
+  /sensors:
+    get:
+      tags:
+        - sensors
+      summary: Get all sensors
+      description: Retrieves a list of all sensors registered in the system with their current values
+      operationId: getSensors
+      responses:
+        '200':
+          description: List of sensors
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Sensor'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      tags:
+        - sensors
+      summary: Create a new sensor
+      description: Adds a new sensor to the system
+      operationId: createSensor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SensorCreate'
+      responses:
+        '201':
+          description: Sensor created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sensor'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /sensors/{id}:
+    get:
+      tags:
+        - sensors
+      summary: Get sensor by ID
+      description: Retrieves sensor details by ID. For temperature sensors, real-time data is fetched from external API.
+      operationId: getSensorById
+      parameters:
+        - name: id
+          in: path
+          description: Sensor ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Sensor details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sensor'
+        '400':
+          description: Invalid ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Sensor not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      tags:
+        - sensors
+      summary: Update sensor by ID
+      description: Updates sensor information by ID
+      operationId: updateSensor
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Sensor ID
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SensorUpdate'
+      responses:
+        '200':
+          description: Sensor updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sensor'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Sensor not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      tags:
+        - sensors
+      summary: Delete sensor by ID
+      description: Removes a sensor from the system by its ID
+      operationId: deleteSensor
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Sensor ID
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Sensor deleted successfully
+        '404':
+          description: Sensor not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /sensors/{id}/value:
+    put:
+      tags:
+        - sensors
+      summary: Update sensor value
+      description: Updates the current value and status of a specific sensor
+      operationId: updateSensorValue
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Sensor ID
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SensorValueUpdate'
+      responses:
+        '200':
+          description: Sensor value updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sensor'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Sensor not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /sensors/telemetry:
+    get:
+      tags:
+        - telemetry
+      summary: Get Telemetry by location
+      description: Retrieves Telemetry data for a specific location from the external telemetry API
+      operationId: getTelemetryByLocation
+      parameters:
+        - name: type
+          in: query
+          required: true
+          description: Telemetry type (e.g. temperature, humidity, ...)
+          schema:
+            type: string
+        - name: location
+          in: query
+          required: true
+          description: Location name (e.g. Living Room, Kitchen)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Telemetry data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  location:
+                    type: string
+                    example: "Living Room"
+                  value:
+                    type: number
+                    format: float
+                    example: 22.5
+                  unit:
+                    type: string
+                    example: "°C"
+                  status:
+                    type: string
+                    example: "OK"
+                  timestamp:
+                    type: string
+                    format: date-time
+                  description:
+                    type: string
+                    example: "Temperature in Living Room"
+        '400':
+          description: Invalid location
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    SensorType:
+      type: string
+      enum:
+        - temperature
+        - humidity
+        - motion
+        - light
+        - door
+        - window
+
+    Sensor:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "Living Room Temperature Sensor"
+        type:
+          $ref: '#/components/schemas/SensorType'
+        location:
+          type: string
+          example: "Living Room"
+        value:
+          type: number
+          format: float
+          example: 22.5
+        unit:
+          type: string
+          example: "°C"
+        status:
+          type: string
+          example: "OK"
+        last_updated:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+
+    SensorCreate:
+      type: object
+      required:
+        - name
+        - type
+        - location
+      properties:
+        name:
+          type: string
+          example: "Kitchen Temperature Sensor"
+        type:
+          $ref: '#/components/schemas/SensorType'
+        location:
+          type: string
+          example: "Kitchen"
+        unit:
+          type: string
+          example: "°C"
+
+    SensorUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "Updated Sensor"
+        type:
+          $ref: '#/components/schemas/SensorType'
+        location:
+          type: string
+          example: "Updated Room"
+        unit:
+          type: string
+          example: "°F"
+        value:
+          type: number
+          format: float
+          example: 24.0
+        status:
+          type: string
+          example: "active"
+
+    SensorValueUpdate:
+      type: object
+      required:
+        - value
+        - status
+      properties:
+        value:
+          type: number
+          format: float
+          example: 22.5
+        status:
+          type: string
+          example: "active"
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Sensor not found"
